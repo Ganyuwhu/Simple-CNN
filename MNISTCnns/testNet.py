@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as opt
 import time
 from matplotlib_inline import backend_inline
+from MNISTCnns import Schedulers
 backend_inline.set_matplotlib_formats('svg')
 
 
@@ -31,18 +32,28 @@ def Get_Precision(model, loader, data_type):
 
 
 def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.CrossEntropyLoss(), _momentum=1.0,
-         batch_size=64):
-    print(_model.__class__.__name__, '训练结果:')
+         batch_size=64, scheduler_type='Origin'):
     losses = []
+
     loss_temp = [0] * batch_size
     result_temp = 1e-5
     epochs = 100
+    lr = _learning_rate
     start_time = time.time()
 
-    optimizer = opt.Adam(_model.parameters(), lr=_learning_rate)
+    optimizer = opt.Adam(_model.parameters(), lr=lr)
+    scheduler = Schedulers.init_scheduler(base_lr=lr, Type=scheduler_type)
+    print('使用的学习率下降调度器为：', scheduler.__class__.__name__)
+    result = 0
 
     for _epochs in range(epochs):
         loss_epoch = []
+
+        if scheduler_type == 'Origin':
+            lr = scheduler(result)
+        else:
+            lr = scheduler()
+
         for (x, y) in _train_loader:
             (x, y) = (x.to('cuda:0'), y.to('cuda:0'))
             optimizer.zero_grad()
@@ -51,35 +62,30 @@ def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.
             losses.append(loss.item())
             loss_epoch.append(loss.item())
             loss.backward()
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
             optimizer.step()
 
         diff = [(a - b) ** 2 for a, b in zip(loss_epoch, loss_temp)]
         result = sum(diff)
 
         print(
-            f'第 {_epochs} 次训练: loss = {max(loss_epoch)}, lr = {_learning_rate}, loss_error = {result}, '
+            f'第 {_epochs+1} 次训练: loss = {max(loss_epoch)}, lr = {lr}, loss_error = {result}, '
             f'result change rate = {abs(result - result_temp) / result_temp}'
         )
 
-        if abs(result - result_temp) / result < 0.02:
-            _learning_rate /= 10
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = _learning_rate
-
-        if max(loss_epoch) < 0.15:
+        if max(loss_epoch) < 0.1:
             print(f'训练次数: {_epochs}')
             break
+
+        Get_Precision(_model, _train_loader, 'train')
+        Get_Precision(_model, _test_loader, 'test')
 
         loss_temp = loss_epoch
         result_temp = result
 
     end_time = time.time()
-    # fig = plt.figure()
-    # plt.plot(range(len(losses)), losses)
-    # plt.show()
 
-    Get_Precision(_model, _train_loader, 'train')
-    Get_Precision(_model, _test_loader, 'test')
     print('程序运行时间:\t', end_time - start_time)
 
     return _model, losses
