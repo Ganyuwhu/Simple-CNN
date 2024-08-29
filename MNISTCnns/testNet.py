@@ -7,28 +7,8 @@ import torch.optim as opt
 import time
 from matplotlib_inline import backend_inline
 from MNISTCnns import Schedulers
+from MNISTCnns import Precisions
 backend_inline.set_matplotlib_formats('svg')
-
-
-def Get_Precision(model, loader, data_type):
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for (x, y) in loader:
-            (x, y) = (x.to('cuda:0'), y.to('cuda:0'))
-            predict = model(x)
-            _, predict = torch.max(predict.data, dim=1)
-            correct += torch.sum((predict == y))
-            total += y.size(0)
-
-    if data_type == 'train':
-        print(f'对训练集的精度为:{correct * 100 / total}%')
-
-    elif data_type == 'check':
-        print(f'对验证集的精度为:{correct * 100 / total}%')
-
-    else:
-        print(f'对测试集的精度为:{correct * 100 / total}%')
 
 
 def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.CrossEntropyLoss(), _momentum=1.0,
@@ -78,8 +58,8 @@ def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.
             print(f'训练次数: {_epochs}')
             break
 
-        Get_Precision(_model, _train_loader, 'train')
-        Get_Precision(_model, _test_loader, 'test')
+        Precisions.Get_Precision(_model, _train_loader, 'train')
+        Precisions.Get_Precision(_model, _test_loader, 'test')
 
         loss_temp = loss_epoch
         result_temp = result

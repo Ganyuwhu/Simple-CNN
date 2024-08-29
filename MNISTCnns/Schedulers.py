@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import torch
+
 
 class FactorScheduler:
     # 构建单因子调度器
-    def __init__(self, factor=0.9, stop_factor=1e-7, base_lr=0.1):
+    def __init__(self, factor=0.85, stop_factor=1e-7, base_lr=0.1):
         """
         :param self: 指向调度器本身
         :param factor: 每次衰减的倍率
@@ -45,6 +47,49 @@ class OriginFactor:
         # 判断是否降低学习率
         if abs((self.result_temp-self.result)/(self.result_temp+1e-10)) < 0.02:
             self.current_lr /= 10
+        return self.current_lr
+
+
+class CosineScheduler:
+    def __init__(self, base_lr, final_lr, warm_up):
+        """
+        :param base_lr: 初始学习率
+        :param final_lr: 目标学习率
+        :param warm_up: 目标epoch，epoch高于这个值会将lr固定为final_lr
+        """
+        self.base_lr = base_lr
+        self.final_lr = final_lr
+        self.warm_up = warm_up
+
+    def __call__(self, epoch):
+        """
+        :param epoch: 输入当前epoch
+        :return: 计算出的下一个lr的值
+        """
+        if epoch < self.warm_up:
+            lr = self.final_lr + (self.base_lr - self.final_lr) * (1 + torch.cos(torch.pi * epoch / self.warm_up))
+        else:
+            lr = self.final_lr
+
+        return lr
+
+
+class MultiFactorScheduler:
+    def __init__(self, factor=0.5, milestone=None, base_lr=0.01):
+        """
+        :param factor: 学习率的下降率
+        :param milestone: 用于存储需要下降学习率的epoch的tuple
+        :param base_lr: 初始学习率
+        """
+        if milestone is None:
+            milestone = [15, 30]
+        self.factor = factor
+        self.milestone = milestone
+        self.current_lr = base_lr
+
+    def __call__(self, epoch):
+        if epoch in self.milestone:
+            self.current_lr *= self.factor
         return self.current_lr
 
 

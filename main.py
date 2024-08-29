@@ -61,7 +61,7 @@ def test_vgg16(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
 
 
 # 测试GoogleNet_v1
-def test_GoogleNet_v1(_learning_rate=0.001, batch_size=64, scheduler_type='Origin'):
+def test_GoogleNet_v1(_learning_rate=0.00035, batch_size=64, scheduler_type='Origin'):
     model_GooV1 = GoogleNetV1.GoogleNet_V1().to('cuda:0')
     print(model_GooV1.__class__.__name__, '训练结果：')
     model_GooV1 = nn.DataParallel(model_GooV1)
@@ -139,10 +139,11 @@ def test_ResNeXt(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
 
 
 # GoogleNet_v1_1, loss_v1_1 = test_GoogleNet_v1()
-Google_v1_2, loss_v1_2 = test_GoogleNet_v1(scheduler_type='Factor')
+# Google_v1_2, loss_v1_2 = test_GoogleNet_v1(scheduler_type='Factor')
 # torch.save(Google_v1, 'GoogleV1.pth')
 #
-# Google_v2, loss_v2 = test_GoogleNet_v2()
+# Google_v2_1, loss_v2_1 = test_GoogleNet_v2()
+Google_v2_2, loss_v2_2 = test_GoogleNet_v2(scheduler_type='Factor')
 # torch.save(Google_v2, 'GoogleV2.pth')
 
 # Google_v3, loss_v3 = test_GoogleNet_v3()
