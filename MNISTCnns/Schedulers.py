@@ -51,7 +51,7 @@ class OriginFactor:
 
 
 class CosineScheduler:
-    def __init__(self, base_lr, final_lr, warm_up):
+    def __init__(self, base_lr, final_lr=1e-7, warm_up=50):
         """
         :param base_lr: 初始学习率
         :param final_lr: 目标学习率
@@ -82,7 +82,7 @@ class MultiFactorScheduler:
         :param base_lr: 初始学习率
         """
         if milestone is None:
-            milestone = [15, 30]
+            milestone = [10, 20, 30, 40, 50]
         self.factor = factor
         self.milestone = milestone
         self.current_lr = base_lr
@@ -98,6 +98,10 @@ def init_scheduler(base_lr, Type='Origin'):
         scheduler = OriginFactor(base_lr=base_lr)
     elif Type == 'Factor':
         scheduler = FactorScheduler(base_lr=base_lr)
+    elif Type == 'Cosine':
+        scheduler = CosineScheduler(base_lr=base_lr)
+    elif Type == 'Multi':
+        scheduler = MultiFactorScheduler(base_lr=base_lr)
     else:
         raise ValueError('Type must be chosen from {Origin, Factor}')
     return scheduler
