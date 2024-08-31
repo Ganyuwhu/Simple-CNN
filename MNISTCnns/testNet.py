@@ -31,8 +31,10 @@ def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.
 
         if scheduler_type == 'Origin':
             lr = scheduler(result)
-        else:
+        elif scheduler_type == 'Factor':
             lr = scheduler()
+        else:
+            lr = scheduler(_epochs+1)
 
         for (x, y) in _train_loader:
             (x, y) = (x.to('cuda:0'), y.to('cuda:0'))
@@ -42,9 +44,10 @@ def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.
             losses.append(loss.item())
             loss_epoch.append(loss.item())
             loss.backward()
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
             optimizer.step()
+
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
 
         diff = [(a - b) ** 2 for a, b in zip(loss_epoch, loss_temp)]
         result = sum(diff)

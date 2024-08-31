@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import torch
+import math
 
 
 class FactorScheduler:
     # 构建单因子调度器
-    def __init__(self, factor=0.85, stop_factor=1e-7, base_lr=0.1):
+    def __init__(self, factor=0.95, stop_factor=1e-7, base_lr=0.1):
         """
         :param self: 指向调度器本身
         :param factor: 每次衰减的倍率
@@ -45,9 +46,9 @@ class OriginFactor:
         self.result = result
 
         # 判断是否降低学习率
-        if abs((self.result_temp-self.result)/(self.result_temp+1e-10)) < 0.02:
+        if abs((self.result_temp-self.result-1e-5)/(self.result_temp+1e-10)) < 0.02:
             self.current_lr /= 10
-        return self.current_lr
+        return max(self.current_lr, self.stop_factor)
 
 
 class CosineScheduler:
@@ -67,7 +68,7 @@ class CosineScheduler:
         :return: 计算出的下一个lr的值
         """
         if epoch < self.warm_up:
-            lr = self.final_lr + (self.base_lr - self.final_lr) * (1 + torch.cos(torch.pi * epoch / self.warm_up))
+            lr = self.final_lr + (self.base_lr - self.final_lr) * (1 + math.cos(math.pi * epoch / self.warm_up))
         else:
             lr = self.final_lr
 

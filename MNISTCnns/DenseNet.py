@@ -13,98 +13,80 @@ from torchvision import datasets
 """
 
 
-class DenseLayer(nn.Module):
-    """
-        DenseBlock的基本结构，由BN-Conv-relu-Conv构成
-    """
-
-    def __init__(self, in_channels, growth_rate):
-        """
-        :param in_channels: 输入通道数
-        :param growth_rate: 增长率
-        """
-        super(DenseLayer, self).__init__()
-        self.bn = nn.BatchNorm2d(in_channels)
-        self.Conv1 = nn.Conv2d(in_channels=in_channels, out_channels=growth_rate, kernel_size=1, padding=0,
-                               stride=1)
-        self.Conv2 = nn.Conv2d(in_channels=growth_rate, out_channels=growth_rate, kernel_size=3, padding=1,
-                               stride=1)
-
-    def forward(self, x):
-        new_features = self.Conv2(f.relu(self.Conv1(self.bn(x))))
-        return torch.cat((x, new_features), dim=1)
-
-
 class DenseBlock(nn.Module):
-    def __init__(self, in_channels, growth_rate, size):
-        """
-        :param in_channels: 输入通道数
-        :param growth_rate: 增长率
-        :param size: 包含的DenseLayer数
-        """
+    def __init__(self, num_layers, num_features, growth_rate):
         super(DenseBlock, self).__init__()
-        self.layer_list = []
-        for i in range(size):
-            _layer = DenseLayer(in_channels=in_channels+i*growth_rate, growth_rate=growth_rate)
-            self.layer_list.append(_layer)
+        self.num_features = num_features
+        self.layers = nn.ModuleList()
+
+        for i in range(num_layers):
+            bn_1 = nn.BatchNorm2d(num_features + i * growth_rate)
+            relu_1 = nn.LeakyReLU()
+            conv_1 = nn.Conv2d(in_channels=num_features + i*growth_rate, out_channels=growth_rate, kernel_size=1,
+                               padding=0, stride=1)
+            bn_2 = nn.BatchNorm2d(growth_rate)
+            relu_2 = nn.LeakyReLU()
+            conv_3 = nn.Conv2d(in_channels=growth_rate, out_channels=growth_rate, kernel_size=3, padding=1, stride=1)
+
+            self.layers.append(nn.Sequential(
+                bn_1, relu_1, conv_1, bn_2, relu_2, conv_3
+            ))
 
     def forward(self, x):
-        for _layer in self.layer_list:
-            x = _layer(x)
-        return x
+        features = [x]
+        for layer in self.layers:
+            new_feature = layer(torch.cat(features, dim=1))
+            features.append(new_feature)
 
-
-class Transition(nn.Module):
-    def __init__(self, _in_channels):
-        super(Transition, self).__init__()
-        # Transition layer基本结构
-        self.Conv = nn.Conv2d(in_channels=_in_channels, out_channels=_in_channels, kernel_size=1, padding=0, stride=1)
-        self.pool = nn.AvgPool2d(kernel_size=2, padding=0, stride=2)
-
-    def forward(self, x):
-        return self.pool(self.Conv(x))
+        return torch.cat(features, dim=1)
 
 
 class DenseNet(nn.Module):
-    def __init__(self):
+    def __init__(self, growth_rate):
         super(DenseNet, self).__init__()
-        # DenseNet基本结构
         self.net = nn.Sequential(
             # C1 7*7卷积层
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, padding=3, stride=2),
 
-            # P1 最大值池化层
+            # P1 3*3最大值池化层
             nn.MaxPool2d(kernel_size=3, padding=1, stride=2),
 
             # D2 DenseBlock块
-            DenseBlock(in_channels=64, growth_rate=32, size=6),
+            DenseBlock(num_layers=6, num_features=64, growth_rate=growth_rate),
 
-            # T3 Transition layer
-            Transition(256),
+            # T3 Transition块
+            nn.Conv2d(in_channels=256, out_channels=128, kernel_size=1, padding=0, stride=1),
+            nn.AvgPool2d(kernel_size=2, padding=0, stride=2),
 
             # D4 DenseBlock块
-            DenseBlock(in_channels=256, growth_rate=32, size=12),
+            DenseBlock(num_layers=12, num_features=128, growth_rate=growth_rate),
 
-            # T5 Transition layer
-            Transition(640),
+            # T5 Transition块
+            nn.Conv2d(in_channels=512, out_channels=256, kernel_size=1, padding=0, stride=1),
+            nn.AvgPool2d(kernel_size=2, padding=0, stride=2),
 
             # D6 DenseBlock块
-            DenseBlock(in_channels=640, growth_rate=32, size=24),
+            DenseBlock(num_layers=24, num_features=256, growth_rate=growth_rate),
 
-            # T7 Transition layer
-            Transition(1408),
+            # T7 Transition块
+            nn.Conv2d(in_channels=1024, out_channels=512, kernel_size=1, padding=0, stride=1),
+            nn.AvgPool2d(kernel_size=2, padding=0, stride=2),
 
             # D8 DenseBlock块
-            DenseBlock(in_channels=1408, growth_rate=32, size=16),
+            DenseBlock(num_layers=16, num_features=512, growth_rate=growth_rate),
 
-            # P9 7*7池化层
-            nn.AvgPool2d(kernel_size=7, stride=1),
+            # P8 平均值池化层
+            nn.AvgPool2d(kernel_size=7, padding=0, stride=1),
 
             # 展平
             nn.Flatten(),
 
+            # Dropout
+            nn.Dropout(0.8),
+
             # 全连接层
-            nn.Linear(1920, 10)
+            nn.Linear(1024, 10)
+
         )
 
     def forward(self, x):
@@ -138,7 +120,7 @@ def Get_dataset():
         transform=transform
     )
 
-    train_loader = DataLoader(train_Data, shuffle=True, batch_size=64)
-    test_loader = DataLoader(test_Data, shuffle=True, batch_size=64)
+    train_loader = DataLoader(train_Data, shuffle=True, batch_size=32)
+    test_loader = DataLoader(test_Data, shuffle=True, batch_size=32)
 
     return train_Data, test_Data, train_loader, test_loader
