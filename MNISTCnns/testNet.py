@@ -63,6 +63,10 @@ def test(_model, _train_loader, _test_loader, _learning_rate=0.001, _loss_fn=nn.
 
         Precisions.Get_Precision(_model, _train_loader, 'train')
         Precisions.Get_Precision(_model, _test_loader, 'test')
+        Precisions.Get_callback(_model, _train_loader, 'train')
+        Precisions.Get_callback(_model, _test_loader, 'test')
+        Precisions.Get_F1score(_model, _train_loader, 'train')
+        Precisions.Get_F1score(_model, _test_loader, 'test')
 
         loss_temp = loss_epoch
         result_temp = result

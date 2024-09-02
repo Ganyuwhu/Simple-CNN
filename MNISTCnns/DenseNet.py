@@ -107,20 +107,20 @@ def Get_dataset():
     # 制作数据集
 
     train_Data = datasets.FashionMNIST(
-        root='E:\\gzr\\Simple CNN',
+        root='E:\\gzr\\Simple-CNN',
         train=True,
         download=True,
         transform=transform
     )
 
     test_Data = datasets.FashionMNIST(
-        root='E:\\gzr\\Simple CNN',
+        root='E:\\gzr\\Simple-CNN',
         train=False,
         download=True,
         transform=transform
     )
 
-    train_loader = DataLoader(train_Data, shuffle=True, batch_size=32)
-    test_loader = DataLoader(test_Data, shuffle=True, batch_size=32)
+    train_loader = DataLoader(train_Data, shuffle=True, batch_size=64)
+    test_loader = DataLoader(test_Data, shuffle=True, batch_size=64)
 
     return train_Data, test_Data, train_loader, test_loader

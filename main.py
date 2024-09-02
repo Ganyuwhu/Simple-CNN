@@ -65,7 +65,7 @@ def test_vgg16(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
 def test_GoogleNet_v1(_learning_rate=0.0005, batch_size=64, scheduler_type='Origin'):
     model_GooV1 = GoogleNetV1.GoogleNet_V1().to('cuda:0')
     print(model_GooV1.__class__.__name__, '训练结果：')
-    model_GooV1 = nn.DataParallel(model_GooV1)
+    # model_GooV1 = nn.DataParallel(model_GooV1)
     train_data_goo, test_data_goo, train_loader_goo, test_loader_goo = GoogleNetV1.Get_dataset()
     model_GooV1, loss_Goo1 = testNet.test(model_GooV1, train_loader_goo, test_loader_goo,
                                           _learning_rate=_learning_rate,
@@ -140,19 +140,19 @@ def test_ResNeXt(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
 
 
 # 测试DenseNet
-def test_DenseNet(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
+def test_DenseNet(_learning_rate=0.001, batch_size=64, scheduler_type='Origin'):
     model_DenseNet = DenseNet.DenseNet(growth_rate=32).to('cuda:0')
     print(model_DenseNet.__class__.__name__, '训练结果：')
     # model_DenseNet = nn.DataParallel(model_DenseNet)
     train_data_den, test_data_den, train_loader_den, test_loader_den = DenseNet.Get_dataset()
     model_DenseNet, loss_DenseNet = testNet.test(model_DenseNet, train_loader_den, test_loader_den,
                                                  _learning_rate=_learning_rate,
-                                                 batch_size=32,
+                                                 batch_size=64,
                                                  scheduler_type=scheduler_type)
     return model_DenseNet, loss_DenseNet
 
 
-# GoogleNet_v1_1, loss_v1_1 = test_GoogleNet_v1()
+GoogleNet_v1_1, loss_v1_1 = test_GoogleNet_v1()
 # Google_v1_2, loss_v1_2 = test_GoogleNet_v1(scheduler_type='Factor')
 # Google_v1_3, loss_v1_3 = test_GoogleNet_v1(scheduler_type='Cosine')
 # Google_v1_4, loss_v1_4 = test_GoogleNet_v1(scheduler_type='Multi')
@@ -171,4 +171,6 @@ def test_DenseNet(_learning_rate=0.01, batch_size=64, scheduler_type='Origin'):
 
 # resX, loss_resX = test_ResNeXt()
 
-den, loss_den = test_DenseNet()
+# den_1, loss_den_1 = test_DenseNet(scheduler_type='Factor')
+# den_2, loss_den_2 = test_DenseNet(scheduler_type='Cosine')
+# den_3, loss_den_3 = test_DenseNet(scheduler_type='Multi')
